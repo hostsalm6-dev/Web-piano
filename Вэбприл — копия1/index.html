@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="https://avatars.mds.yandex.net/i?id=a7bcf36956121d3c7b6bfe1bd47f3f2cd9d4a3ef-4076875-images-thumbs&n=13" type="image/x-icon">
+    <meta name="theme-color" content="#2c3e2f">
+    <title>Пианино | Запись и воспроизведение</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;   /* было center – теперь контент сверху */
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Montserrat', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;                    /* убран отступ */
+        }
+
+        /* ---------- ШАПКА ---------- */
+        .site-header {
+            width: 100%;
+            max-width: none;               /* растягиваем на всю ширину */
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px 20px;            /* внутренние отступы можно оставить */
+            margin-bottom: 80px;           /* расстояние до пианино */
+            background: rgba(44, 62, 47, 0.7);
+            border-radius: 0;              /* убираем скругления */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .logo-placeholder {
+            position: absolute;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #3a4a3a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f2e8cf;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            overflow: hidden;
+            border: 2px solid #5a6a5a;
+            transition: 0.3s;
+        }
+        .logo-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .header-nav {
+            display: flex;
+            gap: 15px;
+        }
+        .nav-button {
+           background: #3a4a3a;
+            color: rgb(241, 241, 241);
+            border: 2px solid gray;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 1rem;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-button:hover {
+            background: #5a6a5a;
+            transform: scale(1.02);
+        }
+
+        /* ---------- ОСНОВНОЙ КОНТЕЙНЕР ---------- */
+        .piano-container {
+            background: #2c3e2f;
+            border-radius: 32px;
+            padding: 30px 20px 20px 20px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+            border-bottom: 6px solid #1e2a1e;
+            width: 100%;
+            max-width: 1400px;             /* ограничение для самого пианино */
+            margin-bottom: 20px;
+        }
+
+        /* ----- Обёртка пианино + стрелки по бокам ----- */
+        .piano-wrapper {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .scroll-btn {
+            background: #3a4a3a;
+            border: none;
+            color: #f2e8cf;
+            font-size: 2rem;
+            width: 48px;
+            height: auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            font-family: monospace;
+            flex-shrink: 0;
+        }
+        .scroll-btn:active {
+            transform: scale(0.95);
+            background: #4a5a4a;
+        }
+
+        .piano {
+            position: relative;
+            background: #0a0c0a;
+            border-radius: 16px;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 10px 10px 20px 10px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-x;
+            scroll-behavior: smooth;
+            flex-grow: 1;
+        }
+
+        .white-keys {
+            display: inline-flex;
+            position: relative;
+            z-index: 1;
+        }
+
+        .key.white {
+            width: 70px;
+            height: 260px;
+            background: linear-gradient(145deg, #fef9e8 0%, #fff5e0 100%);
+            border: 1px solid #ccc;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 6px 0 #b0a790, inset 0 1px 0 #fff;
+            cursor: pointer;
+            transition: all 0.05s linear;
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 20px;
+            font-weight: 600;
+            color: #3e2a1f;
+            font-size: 15px;
+            text-shadow: 0 1px 0 white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .key.white.active {
+            background: linear-gradient(145deg, #e0d4bc, #d6c8ae);
+            box-shadow: 0 2px 0 #9b8e7a;
+            transform: translateY(4px);
+        }
+
+        .black-keys {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 2;
+            pointer-events: none;
+            height: 160px;
+        }
+
+        .key.black {
+            position: absolute;
+            width: 44px;
+            height: 160px;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 5px 0 #050505, inset 0 1px 1px rgba(255,255,255,0.2);
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.05s linear;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 18px;
+            color: #f0e6c5;
+            font-size: 13px;
+            font-weight: 500;
+            text-shadow: 0 1px 0 black;
+            z-index: 3;
+        }
+
+        .key.black.active {
+            background: linear-gradient(145deg, #3e3e3e, #2a2a2a);
+            box-shadow: 0 2px 0 #000;
+            transform: translateY(3px);
+        }
+
+        .key-label {
+            font-size: 12px;
+            background: rgba(0,0,0,0.65);
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: white;
+            margin-top: auto;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .white .key-label {
+            background: rgba(0,0,0,0.6);
+            color: #ffecb3;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 20px;
+            padding: 0 15px;
+            color: #f2e8cf;
+            text-shadow: 0 1px 2px black;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+        }
+
+        .instrument-selector {
+            background: #1e2a22;
+            padding: 6px 15px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .instrument-selector select {
+            background: #3a4a3a;
+            border: none;
+            color: #f2e8cf;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: bold;
+            outline: none;
+        }
+
+        .instrument-selector select option {
+            background: #2c3e2f;
+        }
+
+        .recorder-panel {
+            display: flex;
+            gap: 15px;
+            background: #1e2a22;
+            padding: 6px 15px;
+            border-radius: 40px;
+            align-items: center;
+            font-family: monospace;
+            flex-wrap: wrap;
+        }
+
+        .record-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #666;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        .record-indicator.recording {
+            background-color: #ff3333;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1);}
+            50% { opacity: 0.5; transform: scale(1.2);}
+            100% { opacity: 1; transform: scale(1);}
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        kbd {
+            background: #2c2c2c;
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-weight: bold;
+            color: #ffd966;
+            margin: 0 2px;
+            box-shadow: inset 0 1px 0 0 #5a5a5a, 0 1px 0 0 #111;
+            font-size: 0.8rem;
+        }
+
+        .mobile-action-btn {
+            background: #3a4a3a;
+            border: none;
+            color: #f2e8cf;
+            font-size: 1.4rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            margin: 0 2px;
+        }
+        .mobile-action-btn:active {
+            transform: scale(0.95);
+        }
+        .mobile-action-btn.active-recording {
+            background: #ff3333;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        .piano-footer {
+            text-align: center;
+            margin-top: 12px;
+            font-size: 12px;
+            opacity: 0.7;
+            color: #c0cfb5;
+        }
+
+        /* ---------- ПОДВАЛ ---------- */
+        .site-footer {
+            width: 100%;
+            max-width: none;               /* растягиваем на всю ширину */
+            background: rgba(30, 42, 34, 0.8);
+            border-radius: 0;              /* убираем скругления */
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            color: #f2e8cf;
+            font-family: monospace;
+            margin-top: auto;              /* прижимаем к низу, если контента мало */
+        }
+        .support-link {
+            color: #eeeeee;
+            text-decoration: none;
+            font-weight: bold;
+            background: #3a4a3a;
+            padding: 8px 20px;
+            border-radius: 30px;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .support-link:hover {
+            background: #5a6a5a;
+            transform: scale(1.02);
+        }
+
+        /* Адаптивные размеры клавиш */
+        @media (max-width: 900px) {
+            .key.white { width: 55px; height: 220px; }
+            .key.black { width: 36px; height: 140px; }
+            .key-label { font-size: 10px; padding: 2px 6px; }
+        }
+        @media (max-width: 700px) {
+            .key.white { width: 45px; height: 200px; }
+            .key.black { width: 30px; height: 130px; }
+            .key-label { font-size: 9px; }
+        }
+        @media (max-width: 500px) {
+            .key.white { width: 38px; height: 180px; }
+            .key.black { width: 26px; height: 120px; }
+            .key-label { font-size: 8px; padding: 1px 4px; }
+            .scroll-btn { width: 36px; font-size: 1.5rem; }
+        }
+        @media (max-width: 400px) {
+            .key.white { width: 32px; height: 170px; }
+            .key.black { width: 22px; height: 115px; }
+            .key-label { font-size: 7px; padding: 1px 3px; }
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 0;               /* вместо 10px — убираем отступы */
+            }
+            .piano-container {
+                padding: 15px 10px 15px 10px;
+                border-radius: 20px;
+            }
+            .info-panel {
+                padding: 0 5px;
+                gap: 10px;
+            }
+            .site-header, .site-footer {
+                border-radius: 0;         /* убираем скругления */
+                padding: 10px;
+            }
+            .site-header {
+                justify-content: center;
+            }
+            .logo-placeholder {
+                position: static;
+                margin-right: auto;
+            }
+            .header-nav {
+                margin-right: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========== ШАПКА С ЛОГОТИПОМ И КНОПКАМИ ========== -->
+    <header class="site-header">
+        <div class="logo-placeholder" id="logoContainer">
+            <!-- Замените src на свою фотку или логотип -->
+            <img src="icons/i.webp" alt="Логотип" id="logoImage" style="display: block;">
+        </div>
+        <nav class="header-nav">
+            <a href="records.html" class="nav-button">📼 Мои записи</a>
+            <a href="drums.html" class="nav-button">🥁 Перейти на барабан</a>
+        </nav>
+    </header>
+
+    <!-- ========== ОСНОВНОЙ БЛОК ПИАНИНО ========== -->
+    <div class="piano-container">
+        <div class="piano-wrapper">
+            <button class="scroll-btn" id="scrollLeft" title="Прокрутить влево">◀</button>
+            <div class="piano" id="piano">
+                <div class="white-keys" id="white-keys"></div>
+                <div class="black-keys" id="black-keys"></div>
+            </div>
+            <button class="scroll-btn" id="scrollRight" title="Прокрутить вправо">▶</button>
+        </div>
+
+        <div class="info-panel">
+            <div class="title">🎹 Пианино с записью</div>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <div class="instrument-selector">
+                    <span>🎵 выбрать звучание:</span>
+                    <select id="instrumentSelect">
+                        <option value="piano">🎹 №1 sound</option>
+                        <option value="violin">🎹 №2 sound</option>
+                        <option value="guitar">🎹 №3 sound</option>
+                        <option value="sound4">🎹 №4 sound</option>
+                        <option value="sound5">🎹 №5 sound</option>
+                        <option value="sound6">🎹 №6 sound</option>
+                        <option value="sound7">🎹 №7 sound</option>
+                        <option value="sound8">🎹 №8 sound</option>
+                        <option value="sound9">🎹 №9 sound</option>
+                        <option value="sound10">🎹 №10 sound</option>
+                    </select>
+                </div>
+                <div class="recorder-panel">
+                    <div class="record-indicator" id="recordLed"></div>
+                    <div class="status-text" id="recStatus">⚪ Запись выкл</div>
+                    <button id="recordBtn" class="mobile-action-btn" title="Запись (клавиша Ё)">⏺</button>
+                    <button id="playBtn" class="mobile-action-btn" title="Воспроизвести (клавиша 1)">▶</button>
+                    <span style="display: flex; align-items: center; gap: 4px;">
+                        <kbd>Ё</kbd> — запись &nbsp;|&nbsp; <kbd>1</kbd> — воспр.
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="piano-footer">
+            ⚡ Белые клавиши: A S D F G H J K L ; ' Z X C V B N M , . / &nbsp;&nbsp;|&nbsp;
+            Чёрные: Q W E R T Y U I O P [ ] \ 1 2 &nbsp;&nbsp;|&nbsp;
+            <strong>Запись:</strong> нажмите <kbd>Ё</kbd> (~) для старта/остановки, <kbd>1</kbd> для воспроизведения
+        </div>
+    </div>
+
+    <!-- ========== ПОДВАЛ С ПОДДЕРЖКОЙ ========== -->
+    <footer class="site-footer">
+        <span>📧 Связь с поддержкой:</span>
+        <a href="mailto:support@example.com" class="support-link">✉️ Написать на почту</a>
+        <span>или</span>
+        <a href="https://t.me/your_support_bot" target="_blank" class="support-link">💬 Telegram</a>
+    </footer>
+
+    <script>
+        // --------------------------------------------------------------
+        // 1. ГЕНЕРАЦИЯ ВСЕХ НОТ (5 полных октав: C2 ... B6)
+        // --------------------------------------------------------------
+        const CHROMATIC = [
+            { name: "C",  type: "white" }, { name: "C#", type: "black" },
+            { name: "D",  type: "white" }, { name: "D#", type: "black" },
+            { name: "E",  type: "white" }, { name: "F",  type: "white" },
+            { name: "F#", type: "black" }, { name: "G",  type: "white" },
+            { name: "G#", type: "black" }, { name: "A",  type: "white" },
+            { name: "A#", type: "black" }, { name: "B",  type: "white" }
+        ];
+        const START_OCTAVE = 2, END_OCTAVE = 6;
+        let allNotes = [];
+        let midiCounter = 36;
+        for (let octave = START_OCTAVE; octave <= END_OCTAVE; octave++) {
+            for (let chroma of CHROMATIC) {
+                allNotes.push({
+                    fullName: chroma.name + octave,
+                    midi: midiCounter,
+                    type: chroma.type,
+                    octave: octave,
+                    chromaName: chroma.name
+                });
+                midiCounter++;
+            }
+        }
+
+        // --------------------------------------------------------------
+        // 2. ПРИВЯЗКА КЛАВИШ К НОТАМ
+        // --------------------------------------------------------------
+        const whiteKeysSequence = "ASDFGHJKL;'ZXCVBNM,./";
+        const whiteKeysFull = whiteKeysSequence.split('');
+        const blackKeysBase = "QWERTYUIOP[]".split('');
+        const blackKeysExtra = ['\\', '1', '2'];
+        const blackKeysFull = [...blackKeysBase, ...blackKeysExtra];
+        
+        const whiteNotes = allNotes.filter(n => n.type === 'white');
+        const blackNotes = allNotes.filter(n => n.type === 'black');
+        
+        const noteToKeyboardMap = new Map();
+        const codeToNoteMap = new Map();
+        
+        function getKeyCodeFromChar(ch) {
+            const mapping = {
+                'A':'KeyA','B':'KeyB','C':'KeyC','D':'KeyD','E':'KeyE','F':'KeyF','G':'KeyG','H':'KeyH','I':'KeyI','J':'KeyJ','K':'KeyK','L':'KeyL','M':'KeyM','N':'KeyN','O':'KeyO','P':'KeyP','Q':'KeyQ','R':'KeyR','S':'KeyS','T':'KeyT','U':'KeyU','V':'KeyV','W':'KeyW','X':'KeyX','Y':'KeyY','Z':'KeyZ',
+                ';':'Semicolon', "'":'Quote', ',':'Comma', '.':'Period', '/':'Slash', '\\':'Backslash',
+                '[':'BracketLeft', ']':'BracketRight', '1':'Digit1', '2':'Digit2'
+            };
+            return mapping[ch] || null;
+        }
+        
+        for (let i = 0; i < whiteNotes.length; i++) {
+            const note = whiteNotes[i];
+            const keyChar = whiteKeysFull[i] || '?';
+            const keyCode = getKeyCodeFromChar(keyChar);
+            if (keyCode) {
+                noteToKeyboardMap.set(note.fullName, { keyChar, keyCode, isWhite: true });
+                codeToNoteMap.set(keyCode, note);
+            }
+        }
+        for (let i = 0; i < blackNotes.length; i++) {
+            const note = blackNotes[i];
+            const keyChar = blackKeysFull[i] || '?';
+            const keyCode = getKeyCodeFromChar(keyChar);
+            if (keyCode) {
+                noteToKeyboardMap.set(note.fullName, { keyChar, keyCode, isWhite: false });
+                codeToNoteMap.set(keyCode, note);
+            }
+        }
+        
+        // --------------------------------------------------------------
+        // 3. АУДИО-ДВИЖОК
+        // --------------------------------------------------------------
+        let audioCtx = null;
+        let activeOscillators = new Map();
+        let currentInstrument = 'piano';
+        
+        const instrumentSelect = document.getElementById('instrumentSelect');
+        instrumentSelect.addEventListener('change', (e) => { currentInstrument = e.target.value; });
+        
+        function getFrequencyFromMidi(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+        function initAudioContext() {
+            if (audioCtx) return audioCtx;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+        
+        async function playNote(midi, element) {
+            if (!audioCtx) initAudioContext();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            if (activeOscillators.has(midi)) releaseNote(midi, element);
+            
+            const freq = getFrequencyFromMidi(midi);
+            const now = audioCtx.currentTime;
+            let osc, gainNode, filterNode;
+            
+            switch (currentInstrument) {
+                case 'piano':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+                    break;
+                case 'violin':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'sawtooth'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+                    break;
+                case 'guitar':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'triangle'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.frequency.setValueAtTime(freq, now); osc.frequency.exponentialRampToValueAtTime(freq * 1.002, now + 0.03); osc.frequency.exponentialRampToValueAtTime(freq, now + 0.1);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+                    break;
+                case 'sound4':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'square'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+                    break;
+                case 'sound5':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.4, now + 0.01); gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+                    break;
+                case 'sound6':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain(); filterNode = audioCtx.createBiquadFilter();
+                    osc.type = 'sawtooth'; osc.frequency.value = freq; filterNode.type = 'lowpass'; filterNode.frequency.value = 1200; filterNode.Q.value = 1;
+                    osc.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true, filter: filterNode });
+                    break;
+                case 'sound7':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'triangle'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true, longRelease: true });
+                    break;
+                case 'sound8':
+                    const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator();
+                    const gain1 = audioCtx.createGain(); const gain2 = audioCtx.createGain(); const masterGain = audioCtx.createGain();
+                    osc1.type = 'sine'; osc2.type = 'square'; osc1.frequency.value = freq; osc2.frequency.value = freq;
+                    osc1.connect(gain1); osc2.connect(gain2); gain1.connect(masterGain); gain2.connect(masterGain); masterGain.connect(audioCtx.destination);
+                    gain1.gain.setValueAtTime(0.2, now); gain2.gain.setValueAtTime(0.15, now); masterGain.gain.setValueAtTime(0.0001, now); masterGain.gain.exponentialRampToValueAtTime(0.4, now + 0.02);
+                    osc1.start(); osc2.start();
+                    activeOscillators.set(midi, { osc: [osc1, osc2], gain: masterGain, element, synth: true, extraGains: [gain1, gain2] });
+                    break;
+                case 'sound9':
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    const lfo = audioCtx.createOscillator(); const lfoGain = audioCtx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq; lfo.type = 'sine'; lfo.frequency.value = 5; lfoGain.gain.value = 5;
+                    lfo.connect(lfoGain); lfoGain.connect(osc.frequency); osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start(); lfo.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true, lfo, lfoGain });
+                    break;
+                case 'sound10':
+                    const oscA = audioCtx.createOscillator(); const oscB = audioCtx.createOscillator();
+                    const gainA = audioCtx.createGain(); const gainB = audioCtx.createGain(); const mixGain = audioCtx.createGain();
+                    oscA.type = 'sawtooth'; oscB.type = 'sawtooth'; oscA.frequency.value = freq; oscB.frequency.value = freq * 1.003;
+                    oscA.connect(gainA); oscB.connect(gainB); gainA.connect(mixGain); gainB.connect(mixGain); mixGain.connect(audioCtx.destination);
+                    gainA.gain.setValueAtTime(0.2, now); gainB.gain.setValueAtTime(0.2, now); mixGain.gain.setValueAtTime(0.0001, now); mixGain.gain.exponentialRampToValueAtTime(0.35, now + 0.02);
+                    oscA.start(); oscB.start();
+                    activeOscillators.set(midi, { osc: [oscA, oscB], gain: mixGain, element, synth: true, extraGains: [gainA, gainB] });
+                    break;
+                default:
+                    osc = audioCtx.createOscillator(); gainNode = audioCtx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = freq; osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+                    gainNode.gain.setValueAtTime(0.0001, now); gainNode.gain.exponentialRampToValueAtTime(0.3, now + 0.02);
+                    osc.start();
+                    activeOscillators.set(midi, { osc, gain: gainNode, element, synth: true });
+            }
+            if (element) element.classList.add('active');
+            if (isRecording) addRecordingEvent(midi, 'noteOn');
+        }
+        
+        function releaseNote(midi, element) {
+            const sound = activeOscillators.get(midi);
+            if (!sound) return;
+            const { element: storedElement, synth, longRelease } = sound;
+            const targetElement = element || storedElement;
+            const now = audioCtx.currentTime;
+            try {
+                if (synth) {
+                    if (longRelease) {
+                        sound.gain.gain.cancelScheduledValues(now);
+                        sound.gain.gain.setValueAtTime(sound.gain.gain.value, now);
+                        sound.gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.0);
+                        if (sound.osc) {
+                            if (Array.isArray(sound.osc)) sound.osc.forEach(o => o.stop(now + 1.1));
+                            else sound.osc.stop(now + 1.1);
+                        }
+                    } else {
+                        sound.gain.gain.cancelScheduledValues(now);
+                        sound.gain.gain.setValueAtTime(sound.gain.gain.value, now);
+                        sound.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+                        if (sound.osc) {
+                            if (Array.isArray(sound.osc)) sound.osc.forEach(o => o.stop(now + 0.35));
+                            else sound.osc.stop(now + 0.35);
+                        }
+                    }
+                    if (sound.lfo) sound.lfo.stop(now + 0.35);
+                }
+            } catch(e) {}
+            if (targetElement) targetElement.classList.remove('active');
+            activeOscillators.delete(midi);
+            if (isRecording) addRecordingEvent(midi, 'noteOff');
+        }
+        
+        // --------------------------------------------------------------
+        // 4. ПОСТРОЕНИЕ ГРАФИЧЕСКОЙ КЛАВИАТУРЫ
+        // --------------------------------------------------------------
+        const whiteKeysContainer = document.getElementById('white-keys');
+        const blackKeysContainer = document.getElementById('black-keys');
+        whiteKeysContainer.innerHTML = '';
+        blackKeysContainer.innerHTML = '';
+        let whiteKeyElements = [];
+        let blackKeyItems = [];
+        
+        let whiteIndexCounter = 0;
+        for (let note of allNotes) {
+            if (note.type === 'white') {
+                const keyDiv = document.createElement('div');
+                keyDiv.className = 'key white';
+                keyDiv.setAttribute('data-midi', note.midi);
+                const kbInfo = noteToKeyboardMap.get(note.fullName);
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'key-label';
+                labelSpan.innerText = kbInfo ? `${note.fullName} ⌨️ ${kbInfo.keyChar}` : note.fullName;
+                keyDiv.appendChild(labelSpan);
+                keyDiv.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    playNote(note.midi, keyDiv);
+                    const onMouseUp = () => { releaseNote(note.midi, keyDiv); document.removeEventListener('mouseup', onMouseUp); };
+                    document.addEventListener('mouseup', onMouseUp);
+                    keyDiv.addEventListener('mouseleave', () => { releaseNote(note.midi, keyDiv); }, { once: true });
+                });
+                whiteKeysContainer.appendChild(keyDiv);
+                whiteKeyElements.push({ element: keyDiv, midi: note.midi, fullName: note.fullName, globalIndex: whiteIndexCounter });
+                whiteIndexCounter++;
+            }
+        }
+        
+        function getPrecedingWhiteIndexForBlack(blackMidi) {
+            const whiteMidi = blackMidi - 1;
+            const found = whiteKeyElements.find(w => w.midi === whiteMidi);
+            return found ? found.globalIndex : -1;
+        }
+        
+        for (let note of allNotes) {
+            if (note.type === 'black') {
+                const precedingIdx = getPrecedingWhiteIndexForBlack(note.midi);
+                if (precedingIdx === -1) continue;
+                const blackDiv = document.createElement('div');
+                blackDiv.className = 'key black';
+                blackDiv.setAttribute('data-midi', note.midi);
+                const kbInfo = noteToKeyboardMap.get(note.fullName);
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'key-label';
+                labelSpan.innerText = kbInfo ? `${note.fullName} ⌨️ ${kbInfo.keyChar}` : note.fullName;
+                blackDiv.appendChild(labelSpan);
+                blackDiv.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); e.stopPropagation();
+                    playNote(note.midi, blackDiv);
+                    const onMouseUp = () => { releaseNote(note.midi, blackDiv); document.removeEventListener('mouseup', onMouseUp); };
+                    document.addEventListener('mouseup', onMouseUp);
+                    blackDiv.addEventListener('mouseleave', () => { releaseNote(note.midi, blackDiv); }, { once: true });
+                });
+                blackKeysContainer.appendChild(blackDiv);
+                blackKeyItems.push({ element: blackDiv, midi: note.midi, fullName: note.fullName, precedingWhiteIndex: precedingIdx });
+            }
+        }
+        
+        function positionBlackKeys() {
+            const whiteKeysDom = document.querySelectorAll('.key.white');
+            if (!whiteKeysDom.length) return;
+            const whiteWidth = whiteKeysDom[0].offsetWidth;
+            let actualBlackWidth = 44;
+            if (blackKeyItems.length) {
+                const style = getComputedStyle(blackKeyItems[0].element);
+                actualBlackWidth = parseFloat(style.width) || 44;
+            }
+            blackKeyItems.forEach(item => {
+                const whiteIdx = item.precedingWhiteIndex;
+                if (whiteIdx >= 0 && whiteIdx < whiteKeysDom.length) {
+                    const leftWhite = whiteKeysDom[whiteIdx];
+                    const leftEdge = leftWhite.offsetLeft;
+                    const rightWhite = (whiteIdx + 1 < whiteKeysDom.length) ? whiteKeysDom[whiteIdx + 1] : null;
+                    let leftPos;
+                    if (rightWhite) {
+                        const rightEdge = rightWhite.offsetLeft;
+                        const center = (leftEdge + rightEdge) / 2;
+                        leftPos = center - (actualBlackWidth / 2);
+                    } else {
+                        leftPos = leftEdge + whiteWidth - (actualBlackWidth / 2);
+                    }
+                    item.element.style.left = `${leftPos}px`;
+                }
+            });
+        }
+        setTimeout(positionBlackKeys, 30);
+        window.addEventListener('resize', positionBlackKeys);
+        window.addEventListener('load', () => {
+            positionBlackKeys();
+            document.getElementById('piano').scrollLeft = 0;
+        });
+        
+        // --------------------------------------------------------------
+        // 5. ЗАПИСЬ И ВОСПРОИЗВЕДЕНИЕ
+        // --------------------------------------------------------------
+        let isRecording = false;
+        let recordingStartTime = 0;
+        let recordedEvents = [];
+        let playbackTimeoutIds = [];
+        let isPlayingBack = false;
+        
+        const recordLed = document.getElementById('recordLed');
+        const recStatusSpan = document.getElementById('recStatus');
+        const recordBtn = document.getElementById('recordBtn');
+        
+        function updateRecorderUI() {
+            if (isRecording) {
+                recordLed.classList.add('recording');
+                recStatusSpan.innerHTML = '🔴 ЗАПИСЬ ...';
+                if (recordBtn) recordBtn.classList.add('active-recording');
+            } else {
+                recordLed.classList.remove('recording');
+                recStatusSpan.innerHTML = '⚪ Запись выкл';
+                if (recordBtn) recordBtn.classList.remove('active-recording');
+            }
+        }
+        
+        function addRecordingEvent(midi, type) {
+            if (!isRecording) return;
+            const now = performance.now();
+            const offset = now - recordingStartTime;
+            recordedEvents.push({ timeOffset: offset, midi: midi, type: type });
+        }
+        
+        function stopPlayback() {
+            for (let id of playbackTimeoutIds) clearTimeout(id);
+            playbackTimeoutIds = [];
+            isPlayingBack = false;
+            for (let [midi, data] of activeOscillators.entries()) releaseNote(midi, data.element);
+        }
+        
+        async function startPlayback() {
+            if (recordedEvents.length === 0) return;
+            if (isPlayingBack) stopPlayback();
+            if (!audioCtx) initAudioContext();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            isPlayingBack = true;
+            for (let ev of recordedEvents) {
+                const timeout = ev.timeOffset;
+                const midiNote = ev.midi;
+                const type = ev.type;
+                const element = getElementByMidi(midiNote);
+                const id = setTimeout(() => {
+                    if (type === 'noteOn') playNote(midiNote, element);
+                    else if (type === 'noteOff') releaseNote(midiNote, element);
+                }, timeout);
+                playbackTimeoutIds.push(id);
+            }
+            const lastOffset = recordedEvents.length ? recordedEvents[recordedEvents.length-1].timeOffset : 0;
+            const cleanupId = setTimeout(() => { isPlayingBack = false; playbackTimeoutIds = []; }, lastOffset + 500);
+            playbackTimeoutIds.push(cleanupId);
+        }
+        
+        function getElementByMidi(midi) {
+            let elem = whiteKeyElements.find(w => w.midi === midi)?.element;
+            if (!elem) elem = blackKeyItems.find(b => b.midi === midi)?.element;
+            return elem || null;
+        }
+        
+        function resetRecording() { recordedEvents = []; }
+        
+        function toggleRecording() {
+            if (isRecording) {
+                isRecording = false;
+                updateRecorderUI();
+            } else {
+                resetRecording();
+                isRecording = true;
+                recordingStartTime = performance.now();
+                updateRecorderUI();
+            }
+        }
+        
+        // --------------------------------------------------------------
+        // 6. MULTI-TOUCH И СКОЛЬЖЕНИЕ
+        // --------------------------------------------------------------
+        const activeTouches = new Map();
+        
+        function getKeyFromPoint(clientX, clientY) {
+            const blackKeys = document.querySelectorAll('.key.black');
+            for (let key of blackKeys) {
+                const rect = key.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) return key;
+            }
+            const whiteKeys = document.querySelectorAll('.key.white');
+            for (let key of whiteKeys) {
+                const rect = key.getBoundingClientRect();
+                if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) return key;
+            }
+            return null;
+        }
+        
+        function onTouchStart(e) {
+            for (let touch of e.changedTouches) {
+                const key = getKeyFromPoint(touch.clientX, touch.clientY);
+                if (key) {
+                    e.preventDefault();
+                    const midi = parseInt(key.getAttribute('data-midi'));
+                    playNote(midi, key);
+                    activeTouches.set(touch.identifier, { midi, element: key });
+                }
+            }
+        }
+        
+        function onTouchMove(e) {
+            for (let touch of e.changedTouches) {
+                const data = activeTouches.get(touch.identifier);
+                if (!data) continue;
+                const key = getKeyFromPoint(touch.clientX, touch.clientY);
+                if (!key) {
+                    releaseNote(data.midi, data.element);
+                    activeTouches.delete(touch.identifier);
+                } else {
+                    const newMidi = parseInt(key.getAttribute('data-midi'));
+                    if (newMidi !== data.midi) {
+                        releaseNote(data.midi, data.element);
+                        playNote(newMidi, key);
+                        data.midi = newMidi;
+                        data.element = key;
+                    }
+                }
+            }
+        }
+        
+        function onTouchEnd(e) {
+            for (let touch of e.changedTouches) {
+                const data = activeTouches.get(touch.identifier);
+                if (data) {
+                    releaseNote(data.midi, data.element);
+                    activeTouches.delete(touch.identifier);
+                }
+            }
+        }
+        
+        document.addEventListener('touchstart', onTouchStart, { passive: false });
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
+        document.addEventListener('touchcancel', onTouchEnd);
+        
+        // Мышь
+        let mouseActive = false, lastMouseKey = null;
+        document.addEventListener('mousedown', (e) => {
+            const key = getKeyFromPoint(e.clientX, e.clientY);
+            if (key) {
+                mouseActive = true;
+                lastMouseKey = key;
+                const midi = parseInt(key.getAttribute('data-midi'));
+                playNote(midi, key);
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            }
+        });
+        function onMouseMove(e) {
+            if (!mouseActive) return;
+            const key = getKeyFromPoint(e.clientX, e.clientY);
+            if (key !== lastMouseKey) {
+                if (lastMouseKey) {
+                    const midi = parseInt(lastMouseKey.getAttribute('data-midi'));
+                    releaseNote(midi, lastMouseKey);
+                }
+                if (key) {
+                    const midi = parseInt(key.getAttribute('data-midi'));
+                    playNote(midi, key);
+                }
+                lastMouseKey = key;
+            }
+        }
+        function onMouseUp() {
+            if (lastMouseKey) {
+                const midi = parseInt(lastMouseKey.getAttribute('data-midi'));
+                releaseNote(midi, lastMouseKey);
+            }
+            mouseActive = false;
+            lastMouseKey = null;
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        }
+        
+        // --------------------------------------------------------------
+        // 7. СТРЕЛКИ ПРОКРУТКИ (без активации клавиш)
+        // --------------------------------------------------------------
+        const pianoDiv = document.getElementById('piano');
+        const scrollLeft = document.getElementById('scrollLeft');
+        const scrollRight = document.getElementById('scrollRight');
+        
+        [scrollLeft, scrollRight].forEach(btn => {
+            btn.addEventListener('mousedown', (e) => e.stopPropagation());
+            btn.addEventListener('touchstart', (e) => e.stopPropagation());
+        });
+        
+        scrollLeft.addEventListener('click', () => {
+            pianoDiv.scrollBy({ left: -300, behavior: 'smooth' });
+        });
+        scrollRight.addEventListener('click', () => {
+            pianoDiv.scrollBy({ left: 300, behavior: 'smooth' });
+        });
+        
+        // --------------------------------------------------------------
+        // 8. КЛАВИАТУРНЫЕ КОМАНДЫ
+        // --------------------------------------------------------------
+        function onGlobalKeyDown(event) {
+            if (event.code === 'Backquote') { event.preventDefault(); toggleRecording(); }
+            else if (event.code === 'Digit1') { event.preventDefault(); if (recordedEvents.length > 0) startPlayback(); }
+        }
+        window.addEventListener('keydown', onGlobalKeyDown);
+        
+        const onKeyDown = (e) => {
+            const code = e.code;
+            if (codeToNoteMap.has(code)) {
+                e.preventDefault();
+                const note = codeToNoteMap.get(code);
+                if (!activeOscillators.has(note.midi)) playNote(note.midi, getElementByMidi(note.midi));
+            }
+        };
+        const onKeyUp = (e) => {
+            const code = e.code;
+            if (codeToNoteMap.has(code)) {
+                e.preventDefault();
+                releaseNote(codeToNoteMap.get(code).midi, getElementByMidi(codeToNoteMap.get(code).midi));
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        
+        document.body.addEventListener('click', () => { if (audioCtx?.state === 'suspended') audioCtx.resume(); });
+        document.body.addEventListener('touchstart', () => { if (audioCtx?.state === 'suspended') audioCtx.resume(); });
+        
+        // --------------------------------------------------------------
+        // 9. СОХРАНЕНИЕ ЗАПИСЕЙ
+        // --------------------------------------------------------------
+        const STORAGE_KEY = 'music_recordings';
+        function saveCurrentRecording() {
+            if (recordedEvents.length === 0) return;
+            const recordings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            recordings.push({
+                id: Date.now(),
+                date: new Date().toISOString(),
+                type: 'piano',
+                instrument: currentInstrument,
+                duration: recordedEvents.length ? recordedEvents[recordedEvents.length-1].timeOffset : 0,
+                events: recordedEvents.map(ev => ({ timeOffset: ev.timeOffset, midi: ev.midi, type: ev.type }))
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(recordings));
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#4a7a4a;color:white;padding:12px 24px;border-radius:30px;z-index:9999;font-family:monospace;box-shadow:0 5px 20px rgba(0,0,0,0.3);';
+            toast.textContent = '✅ Запись сохранена!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+        
+        const origToggle = toggleRecording;
+        toggleRecording = function() {
+            if (isRecording) { origToggle(); saveCurrentRecording(); }
+            else origToggle();
+        };
+        
+        recordBtn.addEventListener('click', () => toggleRecording());
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (recordedEvents.length > 0 && !isPlayingBack) startPlayback();
+        });
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registered', reg))
+          .catch(err => console.log('SW error', err));
+      }
+    </script>
+</body>
+</html>
